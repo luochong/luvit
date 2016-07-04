@@ -117,9 +117,23 @@ local function compliment16(value)
   return value < 0x8000 and value or -0x10000 + value
 end
 
+function Buffer:writeUInt16LE(offset, value)
+  local bByte = bit.rshift(value, 8)
+  local lByte = bit.band(value, 0x00FF)
+  self[offset] = lByte
+  self[offset + 1] = bByte
+end
+
 function Buffer:readUInt16LE(offset)
   return bit.lshift(self[offset + 1], 8) +
                     self[offset]
+end
+
+function Buffer:writeUInt16BE(offset, value)
+  local bByte = bit.rshift(value, 8)
+  local lByte = bit.band(value, 0x00FF)
+  self[offset] = bByte
+  self[offset + 1] = lByte
 end
 
 function Buffer:readUInt16BE(offset)
@@ -127,12 +141,37 @@ function Buffer:readUInt16BE(offset)
                     self[offset + 1]
 end
 
+function Buffer:writeInt16LE(offset, value)
+  if value < 0 then
+    value = value + 0x10000
+  end
+  self:writeUInt16LE(offset, value)
+end
+
 function Buffer:readInt16LE(offset)
   return compliment16(self:readUInt16LE(offset))
 end
 
+function Buffer:writeInt16BE(offset, value)
+  if value < 0 then
+    value = value + 0x10000
+  end
+  self:writeUInt16BE(offset, value)
+end
+
 function Buffer:readInt16BE(offset)
   return compliment16(self:readUInt16BE(offset))
+end
+
+function Buffer:writeUInt32LE(offset, value)
+  local byte1 = bit.rshift(value, 24)
+  local byte2 = bit.band(bit.rshift(value, 16), 0x00FF)
+  local byte3 = bit.band(bit.rshift(value, 8), 0x00FF)
+  local byte4 = bit.band(value, 0x00FF)
+  self[offset] = byte4
+  self[offset + 1] = byte3
+  self[offset + 2] = byte2
+  self[offset + 3] = byte1
 end
 
 function Buffer:readUInt32LE(offset)
@@ -142,6 +181,17 @@ function Buffer:readUInt32LE(offset)
                     self[offset]
 end
 
+function Buffer:writeUInt32BE(offset, value)
+  local byte1 = bit.rshift(value, 24)
+  local byte2 = bit.band(bit.rshift(value, 16), 0x00FF)
+  local byte3 = bit.band(bit.rshift(value, 8), 0x00FF)
+  local byte4 = bit.band(value, 0x00FF)
+  self[offset] = byte1
+  self[offset + 1] = byte2
+  self[offset + 2] = byte3
+  self[offset + 3] = byte4
+end
+
 function Buffer:readUInt32BE(offset)
   return self[offset] * 0x1000000 +
          bit.lshift(self[offset + 1], 16) +
@@ -149,8 +199,22 @@ function Buffer:readUInt32BE(offset)
                     self[offset + 3]
 end
 
+function Buffer:writeInt32LE(offset, value)
+    if value < 0 then
+      value = value + 0xFFFFFFFF + 1
+    end
+    self:writeUInt32LE(offset, value)
+end
+
 function Buffer:readInt32LE(offset)
   return bit.tobit(self:readUInt32LE(offset))
+end
+
+function Buffer:writeInt32BE(offset, value)
+    if value < 0 then
+      value = value + 0xFFFFFFFF + 1
+    end
+    self:writeUInt32BE(offset, value)
 end
 
 function Buffer:readInt32BE(offset)
